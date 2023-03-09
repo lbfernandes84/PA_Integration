@@ -10,10 +10,7 @@ using Mincom.MineMarket.DAL;
 
 namespace pa.integration.universal.adaptor
 {
-
-    /// A scheduled task that get data from PI.
-
-    #region Get PHD Data
+        #region Get PHD Data
 
     public class ImportDataFromPHD : IScheduledTask
     {
@@ -24,6 +21,10 @@ namespace pa.integration.universal.adaptor
 
         #endregion
 
+
+        //ANTONY:In the "Constructor" region, the "mNameValueCollection" is initialized with default values. 
+        //Each key-value in the collection is used to configure various data import options, such as the PHD server
+        //, database name, integrated security, etc.
         #region Constructor
 
         public ImportDataFromPHD()
@@ -54,92 +55,64 @@ namespace pa.integration.universal.adaptor
             mNameValueCollection.Add("23 Web Service URL", "https://localhost/PA/LogSheetService.asmx");
             mNameValueCollection.Add("24 Number of Decimals", "-1");
         }
-
+                  
         #endregion
+        
 
+        //ANTONY/This code is an implementation of an interface called IScheduledTask. This interface is used to schedule tasks to run regularly at a specific time.
         #region IScheduledTask Members
 
-        bool IScheduledTask.Execute(EventActionArgs args, out AdaptorCallException ex)
-        {
-
-            #region Variable Declaration
-
-            DataTable dataTable = null;
-            String pSourcePHDServer = String.Empty;
-            String pSourceDatabaseName = String.Empty;
-            String pSourceUseIntegratedSecurity = String.Empty;
-            String pSourcePHDUser = String.Empty;
-            String pSourcePHDPassword = String.Empty;
-            String pTagsMapperConnectionType = String.Empty;
-            String pTagsMapperDatabaseServerName = String.Empty;
-            String pTagsMapperDatabaseName = String.Empty;
-            String pTagsMapperUseIntegratedSecurity = String.Empty;
-            String pTagsMapperUserID = String.Empty;
-            String pTagsMapperPassword = String.Empty;
-            String pUseMSMQ = String.Empty;
-            String pSendKnownValues = String.Empty;
-            String pLogFile = String.Empty;
-            String url;
-            int pShiftDuration = 0;
-            int pDayDuration = 0;
-            int pAssayStartHour = 0;
-            int pShiftStartHour = 0;
-            int pDayStartHour = 0;
-            int pMonthStartHour = 0;
-            int pDelay = 0;
-            int pWaitPeriod = 0;
-            int pNumberDecimals = 0;
-            SqlConnection sqlConnectionTagsMapper = null;
-            SqlConnection sqlConnectionPHD = null;
-            string connectionStringPHD = String.Empty;
-            #endregion
-
-            #region Parameters, Connections and Tags Mappings
-
-            try
+            bool IScheduledTask.Execute(EventActionArgs args, out AdaptorCallException ex)
             {
+                //ANTONY/Modify the variable declarations to reduce the lines of code.
+                #region Variable Declaration
 
-                #region Get Parameters
+                DataTable dataTable = null;
+                string pSourceUseIntegratedSecurity = "", pSourcePHDUser = "", pSourcePHDPassword = "", pTagsMapperConnectionType = "",
+                    pTagsMapperDatabaseServerName = "", pTagsMapperDatabaseName = "", pTagsMapperUseIntegratedSecurity = "",
+                    pTagsMapperUserID = "", pTagsMapperPassword = "", pUseMSMQ = "", pSendKnownValues = "", pLogFile = "",
+                    url = "", connectionStringPHD = "";
 
-                #region Source PHD
+                int pShiftDuration = 0, pDayDuration = 0, pAssayStartHour = 0, pShiftStartHour = 0, pDayStartHour = 0,
+                    pMonthStartHour = 0, pDelay = 0, pWaitPeriod = 0, pNumberDecimals = 0;
 
+                SqlConnection sqlConnectionTagsMapper = null, sqlConnectionPHD = null;
+                #endregion
+
+
+                #region Parameters, Connections and Tags Mappings
+
+                try
+                {
+                    #region Get Parameters
+                    #region Source PHD
+                // antony:The operator '??' is being used to assign default values ​​to variables if they are null.
                 // Get Source - PHD Server
-                pSourcePHDServer = mNameValueCollection["01 Source - PHD Server"];
-                if (string.IsNullOrEmpty(pSourcePHDServer) || pSourcePHDServer.Trim() == String.Empty)
-                {
-                    throw new ArgumentException("The parameter 'Source - PHD Server' must be indicated");
-                }
-
+                string pSourcePHDServer = mNameValueCollection["01 Source - PHD Server"] ?? throw new ArgumentException("The parameter 'Source - PHD Server' must be indicated");
                 // Get Source - Database Name
-                pSourceDatabaseName = mNameValueCollection["02 Source - PHD Database Name"];
-                if (string.IsNullOrEmpty(pSourceDatabaseName) || pSourceDatabaseName.Trim() == String.Empty)
-                {
-                    throw new ArgumentException("The parameter 'Source - Database Name' must be indicated");
-                }
-
+                string pSourceDatabaseName = mNameValueCollection["02 Source - PHD Database Name"] ?? throw new ArgumentException("The parameter 'Source - Database Name' must be indicated");
+                //antony:Converts the parameter string to a boolean value, returning true if the conversion is successful and false otherwise.
                 // Get Source - Use Integrated Security
-                pSourceUseIntegratedSecurity = mNameValueCollection["03 Source - PHD Use Integrated Security"];
-                if (string.IsNullOrEmpty(pSourceUseIntegratedSecurity) || pSourceUseIntegratedSecurity.Trim() == String.Empty)
-                {
-                    throw new ArgumentException("The parameter 'Source - Use Integrated Security' must be indicated");
-                }
-                if (pSourceUseIntegratedSecurity.ToUpper().Trim() != "TRUE" && pSourceUseIntegratedSecurity.ToUpper().Trim() != "FALSE")
-                {
-                    throw new ArgumentException("The parameter 'Source - Use Integrated Security' must be TRUE or FALSE");
-                }
-
+                bool.TryParse(mNameValueCollection["03 Source - PHD Use Integrated Security"], out bool pSourceUseIntegratedSecurity);
+                    if (!pSourceUseIntegratedSecurity)
+                    {
+                        throw new ArgumentException("The parameter 'Source - Use Integrated Security' must be TRUE or FALSE");
+                    }
                 // Get Source - PHD User
-                pSourcePHDUser = mNameValueCollection["04 Source - PHD User"];
-                if ((string.IsNullOrEmpty(pSourcePHDUser) || pSourcePHDUser.Trim() == String.Empty) && pSourceUseIntegratedSecurity.ToUpper().Trim() == "FALSE")
+                //Antony:an exception is thrown if pSourcePHDPassword or pSourcePHDUser is null or empty
+                pSourcePHDUser = mNameValueCollection["04 Source - PHD User"] ?? string.Empty;
+                if (!string.IsNullOrWhiteSpace(pSourcePHDUser) || pSourceUseIntegratedSecurity.ToUpper().Trim() == "TRUE")
+                {
+                    // Get Source - PHD Password
+                    pSourcePHDPassword = mNameValueCollection["05 Source - PHD Password"] ?? string.Empty;
+                    if (string.IsNullOrWhiteSpace(pSourcePHDPassword) && pSourceUseIntegratedSecurity.ToUpper().Trim() == "FALSE")
+                    {
+                        throw new ArgumentException("The parameter 'Source - PHD Password' must be indicated");
+                    }
+                }
+                else
                 {
                     throw new ArgumentException("The parameter 'Source - PHD User' must be indicated");
-                }
-
-                // Get Source - PHD Password
-                pSourcePHDPassword = mNameValueCollection["05 Source - PHD Password"];
-                if ((string.IsNullOrEmpty(pSourcePHDPassword) || pSourcePHDPassword.Trim() == String.Empty) && pSourceUseIntegratedSecurity.ToUpper().Trim() == "FALSE")
-                {
-                    throw new ArgumentException("The parameter 'Source - PHD Password' must be indicated");
                 }
 
                 #endregion
@@ -172,180 +145,103 @@ namespace pa.integration.universal.adaptor
                 }
 
                 // Get Tags Mapper - Use Integrated Security
-                pTagsMapperUseIntegratedSecurity = mNameValueCollection["09 Tags Mapper - Use Integrated Security"];
-                if (string.IsNullOrEmpty(pTagsMapperUseIntegratedSecurity) || pTagsMapperUseIntegratedSecurity.Trim() == String.Empty)
-                {
-                    throw new ArgumentException("The parameter 'Tags Mapper - Use Integrated Security' must be indicated");
-                }
-                if (pTagsMapperUseIntegratedSecurity.ToUpper().Trim() != "TRUE" && pTagsMapperUseIntegratedSecurity.ToUpper().Trim() != "FALSE")
+                //antony:the code was reduced
+                //Antony:The bool.TryParse() used to parse the boolean value of the parameter and check if it is valid.
+                if (!bool.TryParse(mNameValueCollection["09 Tags Mapper - Use Integrated Security"], out bool tagsMapperUseIntegratedSecurity))
                 {
                     throw new ArgumentException("The parameter 'Tags Mapper - Use Integrated Security' must be TRUE or FALSE");
                 }
-
                 // Get Tags Mapper - User ID
+                //The conditions were only combined since it seemed to me that it was very repetitive
                 pTagsMapperUserID = mNameValueCollection["10 Tags Mapper - User ID"];
-                if (pTagsMapperUseIntegratedSecurity.ToUpper().Trim() != "TRUE")
+                if (pTagsMapperUseIntegratedSecurity.ToUpper().Trim() != "TRUE" && (string.IsNullOrEmpty(pTagsMapperUserID) || pTagsMapperUserID.Trim() == String.Empty))
                 {
-                    if (string.IsNullOrEmpty(pTagsMapperUserID) || pTagsMapperUserID.Trim() == String.Empty)
-                    {
-                        throw new ArgumentException("The parameter 'Tags Mapper - User ID' must be indicated");
-                    }
+                    throw new ArgumentException("The parameter 'Tags Mapper - User ID' must be indicated");
                 }
 
                 // Get Tags Mapper - Password
                 pTagsMapperPassword = mNameValueCollection["11 Tags Mapper - Password"];
-                if (pTagsMapperUseIntegratedSecurity.ToUpper().Trim() != "TRUE")
+                if (pTagsMapperUseIntegratedSecurity.ToUpper().Trim() != "TRUE"&&(string.IsNullOrEmpty(pTagsMapperPassword) || pTagsMapperPassword.Trim() == String.Empty))
                 {
-                    if (string.IsNullOrEmpty(pTagsMapperPassword) || pTagsMapperPassword.Trim() == String.Empty)
-                    {
-                        throw new ArgumentException("The parameter 'Tags Mapper - Password' must be indicated");
-                    }
+                    throw new ArgumentException("The parameter 'Tags Mapper - Password' must be indicated");
                 }
 
                 #endregion
 
                 #region Miscellaneus
 
-                String auxString = mNameValueCollection["12 Shift Duration"];
-                if (string.IsNullOrEmpty(auxString) || auxString.Trim() == String.Empty)
-                {
-                    throw new ArgumentException("The parameter 'Shift Duration' must be indicated");
-                }
-                if (!int.TryParse(auxString.Trim(), out pShiftDuration))
+                //antony:I reduced lines of code with "||" and "?" This operator before the trim method is to avoid an exception in case it is Null
+                if (!int.TryParse(mNameValueCollection["12 Shift Duration"]?.Trim(), out pShiftDuration))
                 {
                     throw new ArgumentException("The parameter 'Shift Duration' must be an integer");
                 }
 
-                auxString = mNameValueCollection["13 Day Duration"];
-                if (string.IsNullOrEmpty(auxString) || auxString.Trim() == String.Empty)
+                if (!int.TryParse(mNameValueCollection["13 Day Duration"]?.Trim(), out pDayDuration))
                 {
-                    throw new ArgumentException("The parameter 'Day Duration' must be indicated");
-                }
-                if (!int.TryParse(auxString.Trim(), out pDayDuration))
+                    throw new ArgumentException("The parameter 'Day Duration' must be indicated and be an integer");
+                }                
+               
+                if (!int.TryParse(mNameValueCollection["14 Assay Duration"]?.Trim(), out pAssayStartHour))
                 {
-                    throw new ArgumentException("The parameter 'Day Duration' must be an integer");
+                    throw new ArgumentException("The parameter 'Assay Duration' must be indicated and be an integer");
                 }
-
-                auxString = mNameValueCollection["14 Assay Start Hour"];
-                if (string.IsNullOrEmpty(auxString) || auxString.Trim() == String.Empty)
+                
+                if (!int.TryParse(mNameValueCollection["15 Shift Start Hour"]?.Trim(), out pShiftStartHour))
                 {
-                    throw new ArgumentException("The parameter 'Assay Start Hour' must be indicated");
+                    throw new ArgumentException("The parameter 'Shift Start Hour' must be indicated and be an integer");
                 }
-                if (!int.TryParse(auxString.Trim(), out pAssayStartHour))
+                
+                if (!int.TryParse(mNameValueCollection["16 Day Start Hour"]?.Trim(), out pDayStartHour))
                 {
-                    throw new ArgumentException("The parameter 'Assay Start Hour' must be an integer");
+                    throw new ArgumentException("The parameter 'Day Start Hour' must be indicated and be an integer");
                 }
-
-                auxString = mNameValueCollection["15 Shift Start Hour"];
-                if (string.IsNullOrEmpty(auxString) || auxString.Trim() == String.Empty)
+                
+                if (!int.TryParse(mNameValueCollection["17 Month Start Hour"]?.Trim(), out pMonthStartHour))
                 {
-                    throw new ArgumentException("The parameter 'Shift Start Hour' must be indicated");
+                    throw new ArgumentException("The parameter 'Month Start Hour' must be indicated and be an integer");
                 }
-                if (!int.TryParse(auxString.Trim(), out pShiftStartHour))
+                
+                if (!int.TryParse(mNameValueCollection["18 Delay (seconds)"]?.Trim(), out int pDelay) || pDelay < 0)
                 {
-                    throw new ArgumentException("The parameter 'Shift Start Hour' must be an integer");
+                    throw new ArgumentException("The parameter 'Delay'  must be a non-negative integer and must be indicated.");
                 }
-
-                auxString = mNameValueCollection["16 Day Start Hour"];
-                if (string.IsNullOrEmpty(auxString) || auxString.Trim() == String.Empty)
+                
+                if (!int.TryParse(mNameValueCollection["19 Wait Period (minutes)"]?.Trim(), out int pWaitPeriod) || pWaitPeriod < -1)
                 {
-                    throw new ArgumentException("The parameter 'Day Start Hour' must be indicated");
+                    throw new ArgumentException("The parameter 'Wait Period' must be a valid integer: -1 (wait until getting a value), 0 (do not wait), or a positive number of minutes to wait");
                 }
-                if (!int.TryParse(auxString.Trim(), out pDayStartHour))
-                {
-                    throw new ArgumentException("The parameter 'Day Start Hour' must be an integer");
-                }
-
-                auxString = mNameValueCollection["17 Month Start Hour"];
-                if (string.IsNullOrEmpty(auxString) || auxString.Trim() == String.Empty)
-                {
-                    throw new ArgumentException("The parameter 'Month Start Hour' must be indicated");
-                }
-                if (!int.TryParse(auxString.Trim(), out pMonthStartHour))
-                {
-                    throw new ArgumentException("The parameter 'Month Start Hour' must be an integer");
-                }
-
-                auxString = mNameValueCollection["18 Delay (seconds)"];
-                if (string.IsNullOrEmpty(auxString) || auxString.Trim() == String.Empty)
-                {
-                    throw new ArgumentException("The parameter 'Delay' must be indicated");
-                }
-                if (!int.TryParse(auxString.Trim(), out pDelay))
-                {
-                    throw new ArgumentException("The parameter 'Delay' must be an integer");
-                }
-                if (pDelay < 0)
-                {
-                    throw new ArgumentException("The parameter 'Delay' must be equal or greater than 0");
-                }
-
-                auxString = mNameValueCollection["19 Wait Period (minutes)"];
-                if (string.IsNullOrEmpty(auxString) || auxString.Trim() == String.Empty)
-                {
-                    throw new ArgumentException("The parameter 'Wait Period' must be indicated");
-                }
-                if (!int.TryParse(auxString.Trim(), out pWaitPeriod))
-                {
-                    throw new ArgumentException("The parameter 'Wait Period' must be an integer");
-                }
-                if (pWaitPeriod < -1)
-                {
-                    throw new ArgumentException("The parameter 'Wait Period' must be -1 (wait until getting a value) or 0 (do not wait) or equal or greater than 1 (wait N minutes)");
-                }
-
                 // Get Use MSMQ
-                pUseMSMQ = mNameValueCollection["20 Use MSMQ"];
-                if (string.IsNullOrEmpty(pUseMSMQ) || pUseMSMQ.Trim() == String.Empty)
+                if (!bool.TryParse(mNameValueCollection["20 Use MSMQ"]?.Trim(), out bool pUseMSMQ))
                 {
-                    throw new ArgumentException("The parameter 'Use MSMQ' must be indicated");
+                    throw new ArgumentException("The parameter 'Use MSMQ' must be indicated and must be a valid boolean value: TRUE or FALSE");
                 }
-                if (pUseMSMQ.ToUpper().Trim() != "TRUE" && pUseMSMQ.ToUpper().Trim() != "FALSE")
-                {
-                    throw new ArgumentException("The parameter 'Use MSMQ' must be TRUE or FALSE");
-                }
-
                 // Send Known Values
-                pSendKnownValues = mNameValueCollection["21 Send Known Values"];
-                if (string.IsNullOrEmpty(pSendKnownValues) || pSendKnownValues.Trim() == String.Empty)
+                if (!bool.TryParse(mNameValueCollection["21 Send Known Values"]?.Trim(), out bool pUseMSMQ))
                 {
                     throw new ArgumentException("The parameter 'Send Known Values' must be indicated");
                 }
-                if (pSendKnownValues.ToUpper().Trim() != "TRUE" && pSendKnownValues.ToUpper().Trim() != "FALSE")
-                {
-                    throw new ArgumentException("The parameter 'Send Known Values' must be TRUE or FALSE");
-                }
-
                 // Get Log File
                 pLogFile = mNameValueCollection["22 Log File"];
 
                 // Get Web Service URL
-                url = mNameValueCollection["23 Web Service URL"];
-                if (string.IsNullOrEmpty(url) || url.Trim() == String.Empty)
+                //Antony:The 'string.UsNullOrWhite' method was used instead of concatenating two conditions since this method verifies if it is null, empty or contains characters with white spaces.
+                if (string.IsNullOrWhiteSpace(mNameValueCollection["23 Web Service URL"]))
                 {
                     throw new ArgumentException("The parameter 'Web Service URL' must be indicated");
                 }
 
                 // Get Number of Decimals
-                auxString = mNameValueCollection["24 Number of Decimals"];
-                if (string.IsNullOrEmpty(auxString) || auxString.Trim() == String.Empty)
+                if (!int.TryParse(mNameValueCollection["24 Number of Decimals"]?.Trim(), out int pNumberDecimals) || pNumberDecimals < -1)
                 {
-                    throw new ArgumentException("The parameter 'Number of Decimals' must be indicated");
+                    throw new ArgumentException("The parameter 'Number of Decimals' must be indicated and must be -1 (no rounding) or 0 (no decimals) or an integer equal or greater than 1 (N decimals)");
                 }
-                if (!int.TryParse(auxString.Trim(), out pNumberDecimals))
-                {
-                    throw new ArgumentException("The parameter 'Number of Decimals' must be an integer");
-                }
-                if (pNumberDecimals < -1)
-                {
-                    throw new ArgumentException("The parameter 'Number of Decimals' must be -1 (no rounding) or 0 (no decimals) or equal or greater than 1 (N decimals)");
-                }
-
+                #endregion
+                
                 #endregion
 
-                #endregion
+                 #region Connect to PHD Server
+                 //Antony:This block of code establishes two different database connections, one for the PDH server and one for a tag mapper.
 
-                #region Connect to PHD Server
                 connectionStringPHD = String.Empty;
                 if (pSourceUseIntegratedSecurity.ToUpper() == "TRUE")
                 {
@@ -360,7 +256,12 @@ namespace pa.integration.universal.adaptor
                 //sqlConnectionPHD = new SqlConnection(connectionStringPHD);
                 //sqlConnectionPHD.Open();
                 #endregion
-
+                //Antony:Estoy utilizando un operador ternario para simplificar la asignación de la cadena de conexión, para que sea mas facil leer y entender el codigo
+                // string connectionString = pTagsMapperUseIntegratedSecurity.ToUpper() == "TRUE"
+                // ? $"Server={pTagsMapperDatabaseServerName.Trim()};Database={pTagsMapperDatabaseName.Trim()};Trusted_Connection=true;"
+                // : $"Server={pTagsMapperDatabaseServerName.Trim()};Database={pTagsMapperDatabaseName.Trim()};User ID={pTagsMapperUserID.Trim()};Password={pTagsMapperPassword.Trim()};";
+                // sqlConnectionTagsMapper = new SqlConnection(connectionString);
+                // sqlConnectionTagsMapper.Open();   
                 #region Connect to Tags Mapper
 
                 string connectionString = String.Empty;
@@ -412,7 +313,8 @@ namespace pa.integration.universal.adaptor
             }
 
             #endregion
-
+            //Antony:This region of code contains a loop that iterates through a set of tag mappings, that is, a list of objects that contain information about each tag and how it should be processed.
+            //where some operations are performed, such as reading the current value of the label, applying a calculation formula, or converting a value to another format.
             #region Loop trough Tags Mappings
 
             String errorMessage = String.Empty;
@@ -779,6 +681,8 @@ namespace pa.integration.universal.adaptor
                                     }
                                 }
                             }
+                            //antony/This code will format a numeric calculation result with a specific number of decimal places. 
+                            //The format only applies if the pNumberDecimals parameter is greater than or equal to zero and if the calculationResult string can be parsed as a double.
 
                             #region Format the value
 
@@ -799,7 +703,7 @@ namespace pa.integration.universal.adaptor
                             #endregion
 
                             #region Create Message Data
-
+                            //antony:creates a message data array with a single row and ten columns, populates it with multiple values, sends the message to a destination via MSMQ or LogSheetService depending on the value of the pUseMSMQ parameter.
                             String[,] dataPA = new String[1, 10];
                             dataPA[0, Global.PATransaction.SetID] = tagConfiguration.TransactionName;
                             dataPA[0, Global.PATransaction.LogTime] = timeToWrite.ToString("yyyy-MM-dd HH:mm:ss");
@@ -813,7 +717,9 @@ namespace pa.integration.universal.adaptor
                             dataPA[0, Global.PATransaction.RowID] = "";
 
                             // Send the message
-
+                            //antony:If pUseMSMQ is true, creates a transaction object using the CreateTransaction method of the Global class and submits it to PA using the SubmitTransaction method with a delay specified by the pDelay parameter. 
+                            //If pUseMSMQ is false,it sends the message to PA using the WriteLogsheetService method of the Global class,
+                            // then checks the result value for each row in the message data array and concatenates any error messages in the errorMessage variable.
                             if (Convert.ToBoolean(pUseMSMQ))
                             {
                                 Global.WriteLog(pLogFile, "MSMQ");
@@ -838,7 +744,7 @@ namespace pa.integration.universal.adaptor
                                 }
 
                                 // Write log file
-
+                                //Antony: if the pLogFile parameter specifies a log file path, it writes the message data to the log file using the WriteLog method of the Global class.
                                 if (pLogFile != "")
                                 {
                                     Global.WriteLog(pLogFile, dataPA);
@@ -926,7 +832,7 @@ namespace pa.integration.universal.adaptor
             #endregion
 
             #region Release connections
-
+            //Antony:This try-catch block is used to close database connections if they are open and to handle any exceptions that may occur when closing connections.
             try
             {
 
@@ -955,7 +861,10 @@ namespace pa.integration.universal.adaptor
             #endregion
 
             #region Write to Log
-
+            //antony:The code checks if a string variable called errorMessage is not empty.
+            // If it is not empty, it checks if its length is greater than 30,000 characters. 
+            //If it is, it shortens the string to the first 30,000 characters using the Substring method.
+            // If the error message is longer than a certain length, it is truncated before being written to the log.
             if (errorMessage != String.Empty)
             {
                 if (errorMessage.Length > 30000)
@@ -994,7 +903,7 @@ namespace pa.integration.universal.adaptor
             int returnValue = 0;
             errorMessage = string.Empty;
 
-            // Se utiliza la instrucción using para asegurarnos la desctrucción de los objetos y liberar recursos
+            // antony:The using statement is used to ensure the destruction of objects and free resources
             //errorMessage = strConnection;
             using (SqlConnection con = new SqlConnection(strConnection))
             {
