@@ -65,33 +65,22 @@ namespace pa.integration.universal.adaptor
             #region Variable Declaration
 
             DataTable dataTable = null;
-            String pSourcePHDServer = String.Empty;
-            String pSourceDatabaseName = String.Empty;
-            String pSourceUseIntegratedSecurity = String.Empty;
-            String pSourcePHDUser = String.Empty;
-            String pSourcePHDPassword = String.Empty;
-            String pTagsMapperConnectionType = String.Empty;
-            String pTagsMapperDatabaseServerName = String.Empty;
-            String pTagsMapperDatabaseName = String.Empty;
-            String pTagsMapperUseIntegratedSecurity = String.Empty;
-            String pTagsMapperUserID = String.Empty;
-            String pTagsMapperPassword = String.Empty;
-            String pUseMSMQ = String.Empty;
-            String pSendKnownValues = String.Empty;
-            String pLogFile = String.Empty;
-            String url;
-            int pShiftDuration = 0;
-            int pDayDuration = 0;
-            int pAssayStartHour = 0;
-            int pShiftStartHour = 0;
-            int pDayStartHour = 0;
-            int pMonthStartHour = 0;
-            int pDelay = 0;
-            int pWaitPeriod = 0;
-            int pNumberDecimals = 0;
+            //Initialize String variable
+            //don't include var url in String.Empty
+            String pSourcePHDServer, pSourceDatabaseName, pSourceUseIntegratedSecurity, pSourcePHDUser, pSourcePHDPassword, pTagsMapperConnectionType, pTagsMapperDatabaseServerName;
+            String pTagsMapperDatabaseName, pTagsMapperUseIntegratedSecurity, pTagsMapperUserID, pTagsMapperPassword, pUseMSMQ,pSendKnownValues, pLogFile, connectionStringPHD,url;
+            //Initialize Int variable
+            int pShiftDuration, pDayDuration, pAssayStartHour, pShiftStartHour, pDayStartHour, pMonthStartHour, pDelay, pWaitPeriod, pNumberDecimals;
+
+            //Initialize String.Empty variable 
+            pSourcePHDServer = pSourceDatabaseName = pSourceUseIntegratedSecurity = pSourcePHDUser = pSourcePHDPassword = pTagsMapperConnectionType = pTagsMapperDatabaseServerName = String.Empty;
+            pTagsMapperDatabaseName=pTagsMapperUseIntegratedSecurity=pTagsMapperUserID=pTagsMapperPassword=pUseMSMQ=pSendKnownValues=pLogFile = connectionStringPHD = String.Empty;
+             
+            pShiftDuration = pDayDuration = pAssayStartHour = pShiftStartHour = pDayStartHour = pMonthStartHour = pDelay = pWaitPeriod = pNumberDecimals = 0;
+            
             SqlConnection sqlConnectionTagsMapper = null;
             SqlConnection sqlConnectionPHD = null;
-            string connectionStringPHD = String.Empty;
+            
             #endregion
 
             #region Parameters, Connections and Tags Mappings
@@ -102,56 +91,37 @@ namespace pa.integration.universal.adaptor
                 #region Get Parameters
 
                 #region Source PHD
-
+                
                 // Get Source - PHD Server
                 pSourcePHDServer = mNameValueCollection["01 Source - PHD Server"];
-                if (string.IsNullOrEmpty(pSourcePHDServer) || pSourcePHDServer.Trim() == String.Empty)
-                {
-                    throw new ArgumentException("The parameter 'Source - PHD Server' must be indicated");
-                }
+                validate_check(pSourcePHDServer, "The parameter 'Source - PHD Server' must be indicated",1);
 
                 // Get Source - Database Name
                 pSourceDatabaseName = mNameValueCollection["02 Source - PHD Database Name"];
-                if (string.IsNullOrEmpty(pSourceDatabaseName) || pSourceDatabaseName.Trim() == String.Empty)
-                {
-                    throw new ArgumentException("The parameter 'Source - Database Name' must be indicated");
-                }
+                validate_check(pSourceDatabaseName, "The parameter 'Source - Database Name' must be indicated",1);
+        
 
                 // Get Source - Use Integrated Security
                 pSourceUseIntegratedSecurity = mNameValueCollection["03 Source - PHD Use Integrated Security"];
-                if (string.IsNullOrEmpty(pSourceUseIntegratedSecurity) || pSourceUseIntegratedSecurity.Trim() == String.Empty)
-                {
-                    throw new ArgumentException("The parameter 'Source - Use Integrated Security' must be indicated");
-                }
-                if (pSourceUseIntegratedSecurity.ToUpper().Trim() != "TRUE" && pSourceUseIntegratedSecurity.ToUpper().Trim() != "FALSE")
-                {
-                    throw new ArgumentException("The parameter 'Source - Use Integrated Security' must be TRUE or FALSE");
-                }
+                validate_check(pSourceUseIntegratedSecurity, "The parameter 'Source - Use Integrated Security' must be indicated", 1);
+                validate_check(pSourceUseIntegratedSecurity, "The parameter 'Source - Use Integrated Security' must be TRUE or FALSE", 2);
 
                 // Get Source - PHD User
                 pSourcePHDUser = mNameValueCollection["04 Source - PHD User"];
-                if ((string.IsNullOrEmpty(pSourcePHDUser) || pSourcePHDUser.Trim() == String.Empty) && pSourceUseIntegratedSecurity.ToUpper().Trim() == "FALSE")
-                {
-                    throw new ArgumentException("The parameter 'Source - PHD User' must be indicated");
-                }
-
+                validate_check(pSourcePHDUser, "The parameter 'Source - PHD User' must be indicated", 3);
+        
                 // Get Source - PHD Password
                 pSourcePHDPassword = mNameValueCollection["05 Source - PHD Password"];
-                if ((string.IsNullOrEmpty(pSourcePHDPassword) || pSourcePHDPassword.Trim() == String.Empty) && pSourceUseIntegratedSecurity.ToUpper().Trim() == "FALSE")
-                {
-                    throw new ArgumentException("The parameter 'Source - PHD Password' must be indicated");
-                }
-
+                validate_check(pSourcePHDPassword, "The parameter 'Source - PHD Password' must be indicated", 3);
+      
                 #endregion
 
                 #region Tags Mapper
 
                 // Get Tags Mapper - Connection Type
                 pTagsMapperConnectionType = mNameValueCollection["06 Tags Mapper - Connection Type"];
-                if (string.IsNullOrEmpty(pTagsMapperConnectionType) || pTagsMapperConnectionType.Trim() == String.Empty)
-                {
-                    throw new ArgumentException("The parameter 'Tags Mapper - Connection Type' must be indicated");
-                }
+                validate_check(pTagsMapperConnectionType, "The parameter 'Tags Mapper - Connection Type' must be indicated", 1);
+
                 if (pTagsMapperConnectionType.ToUpper() != "SQLSERVERNATIVE")
                 {
                     throw new ArgumentException("The parameter 'Tags Mapper - Connection Type' only can be assigned to 'SQLServerNative'");
@@ -159,136 +129,57 @@ namespace pa.integration.universal.adaptor
 
                 // Get Tags Mapper - Database Server Name
                 pTagsMapperDatabaseServerName = mNameValueCollection["07 Tags Mapper - Database Server Name"];
-                if (string.IsNullOrEmpty(pTagsMapperDatabaseServerName) || pTagsMapperDatabaseServerName.Trim() == String.Empty)
-                {
-                    throw new ArgumentException("The parameter 'Tags Mapper - Database Server Name' must be indicated");
-                }
+                validate_check(pTagsMapperDatabaseServerName, "The parameter 'Tags Mapper - Database Server Name' must be indicated", 1);
 
                 // Get Tags Mapper - Database Name
                 pTagsMapperDatabaseName = mNameValueCollection["08 Tags Mapper - Database Name"];
-                if (string.IsNullOrEmpty(pTagsMapperDatabaseName) || pTagsMapperDatabaseName.Trim() == String.Empty)
-                {
-                    throw new ArgumentException("The parameter 'Tags Mapper - Database Name' must be indicated");
-                }
+                validate_check(pTagsMapperDatabaseName, "The parameter 'Tags Mapper - Database Name' must be indicated", 1);
 
                 // Get Tags Mapper - Use Integrated Security
                 pTagsMapperUseIntegratedSecurity = mNameValueCollection["09 Tags Mapper - Use Integrated Security"];
-                if (string.IsNullOrEmpty(pTagsMapperUseIntegratedSecurity) || pTagsMapperUseIntegratedSecurity.Trim() == String.Empty)
-                {
-                    throw new ArgumentException("The parameter 'Tags Mapper - Use Integrated Security' must be indicated");
-                }
-                if (pTagsMapperUseIntegratedSecurity.ToUpper().Trim() != "TRUE" && pTagsMapperUseIntegratedSecurity.ToUpper().Trim() != "FALSE")
-                {
-                    throw new ArgumentException("The parameter 'Tags Mapper - Use Integrated Security' must be TRUE or FALSE");
-                }
+                validate_check(pTagsMapperUseIntegratedSecurity, "The parameter 'Tags Mapper - Use Integrated Security' must be indicated",1);
+                validate_check(pTagsMapperUseIntegratedSecurity, "The parameter 'Tags Mapper - Use Integrated Security' must be TRUE or FALSE", 2);
+        
 
                 // Get Tags Mapper - User ID
                 pTagsMapperUserID = mNameValueCollection["10 Tags Mapper - User ID"];
-                if (pTagsMapperUseIntegratedSecurity.ToUpper().Trim() != "TRUE")
-                {
-                    if (string.IsNullOrEmpty(pTagsMapperUserID) || pTagsMapperUserID.Trim() == String.Empty)
-                    {
-                        throw new ArgumentException("The parameter 'Tags Mapper - User ID' must be indicated");
-                    }
-                }
+                Get_Tags_Mapper(pTagsMapperUseIntegratedSecurity, pTagsMapperUserID, "The parameter 'Tags Mapper - User ID' must be indicated");
 
                 // Get Tags Mapper - Password
                 pTagsMapperPassword = mNameValueCollection["11 Tags Mapper - Password"];
-                if (pTagsMapperUseIntegratedSecurity.ToUpper().Trim() != "TRUE")
-                {
-                    if (string.IsNullOrEmpty(pTagsMapperPassword) || pTagsMapperPassword.Trim() == String.Empty)
-                    {
-                        throw new ArgumentException("The parameter 'Tags Mapper - Password' must be indicated");
-                    }
-                }
+                Get_Tags_Mapper(pTagsMapperUseIntegratedSecurity, pTagsMapperPassword, "The parameter 'Tags Mapper - Password' must be indicated");
 
                 #endregion
 
                 #region Miscellaneus
 
                 String auxString = mNameValueCollection["12 Shift Duration"];
-                if (string.IsNullOrEmpty(auxString) || auxString.Trim() == String.Empty)
-                {
-                    throw new ArgumentException("The parameter 'Shift Duration' must be indicated");
-                }
-                if (!int.TryParse(auxString.Trim(), out pShiftDuration))
-                {
-                    throw new ArgumentException("The parameter 'Shift Duration' must be an integer");
-                }
+                MiscellCheck(auxString,pShiftDuration, "The parameter 'Shift Duration' must be");
 
                 auxString = mNameValueCollection["13 Day Duration"];
-                if (string.IsNullOrEmpty(auxString) || auxString.Trim() == String.Empty)
-                {
-                    throw new ArgumentException("The parameter 'Day Duration' must be indicated");
-                }
-                if (!int.TryParse(auxString.Trim(), out pDayDuration))
-                {
-                    throw new ArgumentException("The parameter 'Day Duration' must be an integer");
-                }
+                MiscellCheck(auxString, pDayDuration, "The parameter 'Day Duration' must be");
 
                 auxString = mNameValueCollection["14 Assay Start Hour"];
-                if (string.IsNullOrEmpty(auxString) || auxString.Trim() == String.Empty)
-                {
-                    throw new ArgumentException("The parameter 'Assay Start Hour' must be indicated");
-                }
-                if (!int.TryParse(auxString.Trim(), out pAssayStartHour))
-                {
-                    throw new ArgumentException("The parameter 'Assay Start Hour' must be an integer");
-                }
-
+                MiscellCheck(auxString, pAssayStartHour, "The parameter 'Assay Start Hour' must be");
+              
                 auxString = mNameValueCollection["15 Shift Start Hour"];
-                if (string.IsNullOrEmpty(auxString) || auxString.Trim() == String.Empty)
-                {
-                    throw new ArgumentException("The parameter 'Shift Start Hour' must be indicated");
-                }
-                if (!int.TryParse(auxString.Trim(), out pShiftStartHour))
-                {
-                    throw new ArgumentException("The parameter 'Shift Start Hour' must be an integer");
-                }
-
+                MiscellCheck(auxString, pShiftStartHour, "The parameter 'Shift Start Hour' must be");
+             
                 auxString = mNameValueCollection["16 Day Start Hour"];
-                if (string.IsNullOrEmpty(auxString) || auxString.Trim() == String.Empty)
-                {
-                    throw new ArgumentException("The parameter 'Day Start Hour' must be indicated");
-                }
-                if (!int.TryParse(auxString.Trim(), out pDayStartHour))
-                {
-                    throw new ArgumentException("The parameter 'Day Start Hour' must be an integer");
-                }
+                MiscellCheck(auxString, pDayStartHour, "The parameter 'Day Start Hour' must be");
 
                 auxString = mNameValueCollection["17 Month Start Hour"];
-                if (string.IsNullOrEmpty(auxString) || auxString.Trim() == String.Empty)
-                {
-                    throw new ArgumentException("The parameter 'Month Start Hour' must be indicated");
-                }
-                if (!int.TryParse(auxString.Trim(), out pMonthStartHour))
-                {
-                    throw new ArgumentException("The parameter 'Month Start Hour' must be an integer");
-                }
+                MiscellCheck(auxString, pMonthStartHour, "The parameter 'Month Start Hour' must be");
 
                 auxString = mNameValueCollection["18 Delay (seconds)"];
-                if (string.IsNullOrEmpty(auxString) || auxString.Trim() == String.Empty)
-                {
-                    throw new ArgumentException("The parameter 'Delay' must be indicated");
-                }
-                if (!int.TryParse(auxString.Trim(), out pDelay))
-                {
-                    throw new ArgumentException("The parameter 'Delay' must be an integer");
-                }
+                MiscellCheck(auxString, pDelay, "The parameter 'Delay' must be");
                 if (pDelay < 0)
                 {
                     throw new ArgumentException("The parameter 'Delay' must be equal or greater than 0");
                 }
 
                 auxString = mNameValueCollection["19 Wait Period (minutes)"];
-                if (string.IsNullOrEmpty(auxString) || auxString.Trim() == String.Empty)
-                {
-                    throw new ArgumentException("The parameter 'Wait Period' must be indicated");
-                }
-                if (!int.TryParse(auxString.Trim(), out pWaitPeriod))
-                {
-                    throw new ArgumentException("The parameter 'Wait Period' must be an integer");
-                }
+                MiscellCheck(auxString, pWaitPeriod, "The parameter 'Wait Period' must be");
                 if (pWaitPeriod < -1)
                 {
                     throw new ArgumentException("The parameter 'Wait Period' must be -1 (wait until getting a value) or 0 (do not wait) or equal or greater than 1 (wait N minutes)");
@@ -296,46 +187,24 @@ namespace pa.integration.universal.adaptor
 
                 // Get Use MSMQ
                 pUseMSMQ = mNameValueCollection["20 Use MSMQ"];
-                if (string.IsNullOrEmpty(pUseMSMQ) || pUseMSMQ.Trim() == String.Empty)
-                {
-                    throw new ArgumentException("The parameter 'Use MSMQ' must be indicated");
-                }
-                if (pUseMSMQ.ToUpper().Trim() != "TRUE" && pUseMSMQ.ToUpper().Trim() != "FALSE")
-                {
-                    throw new ArgumentException("The parameter 'Use MSMQ' must be TRUE or FALSE");
-                }
+                validate_check(pUseMSMQ, "The parameter 'Use MSMQ' must be indicated", 1);
+                validate_check(pUseMSMQ, "The parameter 'Use MSMQ' must be TRUE or FALSE", 2);
 
                 // Send Known Values
                 pSendKnownValues = mNameValueCollection["21 Send Known Values"];
-                if (string.IsNullOrEmpty(pSendKnownValues) || pSendKnownValues.Trim() == String.Empty)
-                {
-                    throw new ArgumentException("The parameter 'Send Known Values' must be indicated");
-                }
-                if (pSendKnownValues.ToUpper().Trim() != "TRUE" && pSendKnownValues.ToUpper().Trim() != "FALSE")
-                {
-                    throw new ArgumentException("The parameter 'Send Known Values' must be TRUE or FALSE");
-                }
+                validate_check(pSendKnownValues, "The parameter 'Send Known Values' must be indicated", 1);
+                validate_check(pSendKnownValues, "The parameter 'Send Known Values' must be TRUE or FALSE", 2);
 
                 // Get Log File
                 pLogFile = mNameValueCollection["22 Log File"];
 
                 // Get Web Service URL
                 url = mNameValueCollection["23 Web Service URL"];
-                if (string.IsNullOrEmpty(url) || url.Trim() == String.Empty)
-                {
-                    throw new ArgumentException("The parameter 'Web Service URL' must be indicated");
-                }
+                validate_check(url, "The parameter 'Web Service URL' must be indicated", 1);
 
                 // Get Number of Decimals
                 auxString = mNameValueCollection["24 Number of Decimals"];
-                if (string.IsNullOrEmpty(auxString) || auxString.Trim() == String.Empty)
-                {
-                    throw new ArgumentException("The parameter 'Number of Decimals' must be indicated");
-                }
-                if (!int.TryParse(auxString.Trim(), out pNumberDecimals))
-                {
-                    throw new ArgumentException("The parameter 'Number of Decimals' must be an integer");
-                }
+                MiscellCheck(auxString, pNumberDecimals, "The parameter 'Number of Decimals' must be");
                 if (pNumberDecimals < -1)
                 {
                     throw new ArgumentException("The parameter 'Number of Decimals' must be -1 (no rounding) or 0 (no decimals) or equal or greater than 1 (N decimals)");
@@ -970,6 +839,77 @@ namespace pa.integration.universal.adaptor
 
             return true;
 
+        }
+        //this method is for validate params in null or not initializer
+        static void validate_check(String FirstParamString,String text,int op)
+        {//this op variable is for select type validation
+            switch (op)
+            {
+                case == 1:
+                    //is null or Trim
+                    if (string.IsNullOrEmpty(FirstParamString) || FirstParamString.Trim() == String.Empty)
+                    {//show message exception of the text
+                        throw new ArgumentException(text);
+                    }
+                    break;
+
+                case == 2:
+                    //compere if this param is upper and indiferent False 
+                    if (FirstParamString.ToUpper().Trim() != "TRUE" && FirstParamString.ToUpper().Trim() != "FALSE")
+                    {
+                        throw new ArgumentException(text);
+                    }
+                    break;
+
+                case == 3:
+                    //compare if is null and the param is false in upper
+                    if ((string.IsNullOrEmpty(FirstParamString) || FirstParamString.Trim() == String.Empty) && FirstParamString.ToUpper().Trim() == "FALSE")
+                    {//show text in Exception
+                        throw new ArgumentException(text);
+                    }
+                    break;
+
+                case == 4:
+                    //check if is diferent whit TRUE in uppercase
+                    if (FirstParamString.ToUpper().Trim() != "TRUE")
+                    {
+                        if (string.IsNullOrEmpty(FirstParamString) || FirstParamString.Trim() == String.Empty)
+                        {
+                            throw new ArgumentException(text);
+                        }
+                    }
+                    break;   
+
+                default:
+                    Console.WriteLine($"This Operator is not valid!!!");
+                    break;
+            }
+            
+        }
+
+        //this method is for compare pTagsMapper and First param for catch exception
+        static void Get_Tags_Mapper(String pTagsMapperUIntSec,String FirstParam,String excMss)
+        {//validate if indiferent to True
+            if (pTagsMapperUIntSec.ToUpper().Trim() != "TRUE")
+            {
+                if (string.IsNullOrEmpty(FirstParam) || FirstParam.Trim() == String.Empty)
+                {//show message 
+                    throw new ArgumentException(excMss);
+                }
+            }
+        }
+
+        //this method is for compare if firstparam is null or empty
+        static void MiscellCheck(String FirstParam,int SecondParam,String excMMS)
+        {
+            if (string.IsNullOrEmpty(FirstParam) || FirstParam.Trim() == String.Empty)
+            {//show message
+                throw new ArgumentException(excMMS+" indicated");
+            }
+            if (!int.TryParse(FirstParam.Trim(), out SecondParam))
+            {//show message
+                throw new ArgumentException(excMMS+" an integer");
+            }
         }
 
         NameValueCollection IScheduledTask.GetInitializationStrings()
